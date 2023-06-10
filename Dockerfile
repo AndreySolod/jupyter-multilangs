@@ -1,7 +1,7 @@
 ARG GOLANG_VERSION=1.20.5
 ARG JULIA_VERSION=1.9.1
 ARG DOTNET_SDK_VERSION=7.0
-ARG ELIXIR_VERSION=1.15
+ARG ELIXIR_VERSION=1.12.3
 ARG JAVA_VERSION=21
 
 FROM golang:${GOLANG_VERSION}-bullseye as golang
@@ -16,16 +16,15 @@ LABEL maintainer="SoloAD"
 LABEL Description="JupyterLab for various languages. Thanks for HeRoMo"
 LABEL Version="0.0.1"
 
-RUN apt-get update && apt-get upgrade
+RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc ruby-full bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils
-RUN conda install -c conda-forge mamba -y && mamba update -c conda-forge --all
-RUN mamba update -c conda-forge --all
+RUN conda update conda --yes && conda install -c conda-forge mamba -y && mamba update -c conda-forge --all
 RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly dash lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU
-RUN pip install torch tensorflow tflearn jupyter_dash sympy
+RUN pip install torch jupyter_dash sympy
 RUN mkdir -p /jupyterlab && mkdir -p /jupytercfg && mkdir -p /matplotlibrc
 COPY build/jupyter_notebook_config.py /jupytercfg/jupyter_notebook_config.py
 COPY build/matplotlibrc /matplotlibrc/matplotlibrc
-RUN npm i jupyterlab-plotly
+#RUN npm i jupyterlab-plotly
 
 EXPOSE "8888"
 EXPOSE "8050"
@@ -37,7 +36,12 @@ RUN mkdir -p /temp && cd /temp && git clone https://github.com/paulovn/sparql-ke
 
 #Installing R
 
-RUN conda install -c r r-essentials
+#RUN conda install -c r r-essentials
+
+#RUN mamba install --quiet --yes -c conda-forge 'r-base>=4.1' 'r-caret' 'r-crayon' 'r-e1071' 'r-forecast' 'r-hexbin' 'r-htmltools' 'r-htmlwidgets' 'r-irkernel' 'r-nycflights13' 'r-randomforest' 'r-rcurl' 'r-rodbc' 'r-rsqlite' 'r-shiny' 'rpy2' 'unixodbc' 'r-markdown' 'r-plotly'
+
+RUN R -e "install.packages('IRkernel')"
+RUN R -e "IRkernel::installspec(user = FALSE)"
 
 #Installing Julia
 ENV JULIA_PATH /usr/local/julia
@@ -64,7 +68,7 @@ RUN go install github.com/gopherdata/gophernotes@v${GOPHERNOTES_VERSION} \
 ENV RUSTUP_HOME=/usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo
 ENV PATH=/usr/local/cargo/bin:$PATH
-ENV RUST_VERSION=1.64.0
+ENV RUST_VERSION=1.70.0
 ENV RUSTUP_VERSION=1.25.1
 RUN set -eux; \
     dpkgArch="$(dpkg --print-architecture)"; \
@@ -83,7 +87,7 @@ RUN set -eux; \
     rustup --version; \
     cargo --version; \
     rustc --version;
-RUN cargo install evcxr_jupyter --version 0.14.1 \
+RUN cargo install evcxr_jupyter \
     && evcxr_jupyter --install
 
 # Install Ruby https://www.ruby-lang.org
@@ -148,7 +152,7 @@ RUN git clone https://github.com/filmor/ierl.git ierl \
 # Install JVM languages
 ## Java
 # https://github.com/allen-ball/ganymede
-ENV JAVA_HOME /usr/local/openjdk-18
+ENV JAVA_HOME /usr/local/openjdk-21
 ENV PATH $JAVA_HOME/bin:$PATH
 ENV GANYMEDE_VERSION=2.0.1.20220723
 COPY --from=openjdk ${JAVA_HOME} ${JAVA_HOME}
@@ -159,12 +163,22 @@ RUN ${JAVA_HOME}/bin/java \
 ## Kotlin
 RUN mamba install --quiet --yes -c jetbrains 'kotlin-jupyter-kernel'
 ## Scala
-RUN curl -Lo coursier https://git.io/coursier-cli \
+RUN apt-get install -y curl && curl -Lo coursier https://git.io/coursier-cli \
     && chmod +x coursier \
     && ./coursier launch --fork almond -- --install \
     && rm -f coursier
 
+#Widgets
+RUN mamba install -c conda-forge ipydrawio
+
+#language servers
+
+RUN rm -rf /temp
+RUN conda install -c conda-forge jedi-language-server r-languageserver
+RUN julia -e 'using Pkg; Pkg.add("LanguageServer")'
+#RUN npm install -g --save-dev bash-language-server dockerfile-language-server-node unified-language-server vscode-json-languageserver-bin yaml-language-server
+
 #Install c++
-RUN conda install -c conda-forge xeus-cling
-
-
+#RUN apt-get install g++
+#RUN mamba install xeus-zmq xtl cling pugixml cpp-argparse
+#RUN mamba install xeus-cling -c conda-forge
