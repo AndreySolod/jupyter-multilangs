@@ -17,15 +17,13 @@ LABEL Description="JupyterLab for various languages. Thanks for HeRoMo"
 LABEL Version="0.0.1"
 
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils
+RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils curl
 RUN conda update conda --yes && conda install -c conda-forge mamba -y && mamba update -c conda-forge --all
 RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly dash lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU xeus-cling
 RUN pip install torch jupyter_dash sympy jupyterlab-dash
 RUN mkdir -p /jupyterlab && mkdir -p /jupytercfg && mkdir -p /matplotlibrc
 COPY build/jupyter_notebook_config.py /jupytercfg/jupyter_notebook_config.py
 COPY build/matplotlibrc /matplotlibrc/matplotlibrc
-RUN npm i -g jupyterlab-plotly
-#ijavascript typescript-jupyter-kernel
 
 EXPOSE "8888"
 EXPOSE "8050"
@@ -143,7 +141,7 @@ RUN git clone https://github.com/filmor/ierl.git ierl \
     && cd ierl \
     && mkdir $HOME/.ierl \
     && mix deps.get \
-    # Build lfe explicitly for now
+    # Build lfe explicitly for nowwhoami
     && (cd deps/lfe && ~/.mix/rebar3 compile) \
     && (cd apps/ierl && env MIX_ENV=prod mix escript.build) \
     && cp apps/ierl/ierl $HOME/.ierl/ierl.escript \
@@ -161,18 +159,14 @@ ENV PATH $JAVA_HOME/bin:$PATH
 ENV GANYMEDE_VERSION=2.1.1.20221231
 COPY --from=openjdk ${JAVA_HOME} ${JAVA_HOME}
 RUN wget https://github.com/allen-ball/ganymede/releases/download/v${GANYMEDE_VERSION}/ganymede-${GANYMEDE_VERSION}.jar -O /tmp/ganymede.jar
-RUN ${JAVA_HOME}/bin/java -jar /tmp/ganymede.jar -i
+RUN ${JAVA_HOME}/bin/java -jar /tmp/ganymede.jar -i --sys-prefix --id=java --display-name=Java21 --copy-jar=true
 ## Kotlin
 RUN mamba install --quiet --yes -c jetbrains 'kotlin-jupyter-kernel'
 ## Scala
-RUN apt-get install -y curl && curl -Lo coursier https://git.io/coursier-cli \
+RUN curl -Lo coursier https://git.io/coursier-cli \
     && chmod +x coursier \
     && ./coursier launch --fork almond -- --install \
     && rm -f coursier
-
-## Javascript
-
-
 
 #Widgets
 RUN mamba install -y -c conda-forge ipydrawio
@@ -180,9 +174,17 @@ RUN mamba install -y -c conda-forge ipydrawio
 #language servers
 
 RUN rm -rf /temp
-RUN conda install -c conda-forge jedi-language-server r-languageserver
+RUN mamba install -y -c conda-forge jedi-language-server r-languageserver
 RUN julia -e 'using Pkg; Pkg.add("LanguageServer")'
-#RUN npm install -g --save-dev bash-language-server dockerfile-language-server-node unified-language-server vscode-json-languageserver-bin yaml-language-server
+RUN npm install -g --save-dev bash-language-server
+RUN npm i -g jupyterlab-plotly
 
 #Install c++
 #C++ was installed on mamba install xeus-cling -c conda-forge
+
+## Install javascript - uncompatible with c++ kernel
+#RUN npm install -g ijavascript && ijsinstall
+
+RUN mkdir -p /jupyterlab
+WORKDIR "/jupyterlab"
+VOLUME "/jupyterlab"
