@@ -17,14 +17,15 @@ LABEL Description="JupyterLab for various languages. Thanks for HeRoMo"
 LABEL Version="0.0.1"
 
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc ruby-full bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils
+RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils
 RUN conda update conda --yes && conda install -c conda-forge mamba -y && mamba update -c conda-forge --all
-RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly dash lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU
-RUN pip install torch jupyter_dash sympy
+RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly dash lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU xeus-cling
+RUN pip install torch jupyter_dash sympy jupyterlab-dash
 RUN mkdir -p /jupyterlab && mkdir -p /jupytercfg && mkdir -p /matplotlibrc
 COPY build/jupyter_notebook_config.py /jupytercfg/jupyter_notebook_config.py
 COPY build/matplotlibrc /matplotlibrc/matplotlibrc
-#RUN npm i jupyterlab-plotly
+RUN npm i -g jupyterlab-plotly
+#ijavascript typescript-jupyter-kernel
 
 EXPOSE "8888"
 EXPOSE "8050"
@@ -35,10 +36,6 @@ CMD ["jupyter", "lab", "--no-browser", "--ip=0.0.0.0", "--allow-root", "--notebo
 RUN mkdir -p /temp && cd /temp && git clone https://github.com/paulovn/sparql-kernel && cd ./sparql-kernel && git pull origin pull/55/head && pip install . && jupyter sparqlkernel install
 
 #Installing R
-
-#RUN conda install -c r r-essentials
-
-#RUN mamba install --quiet --yes -c conda-forge 'r-base>=4.1' 'r-caret' 'r-crayon' 'r-e1071' 'r-forecast' 'r-hexbin' 'r-htmltools' 'r-htmlwidgets' 'r-irkernel' 'r-nycflights13' 'r-randomforest' 'r-rcurl' 'r-rodbc' 'r-rsqlite' 'r-shiny' 'rpy2' 'unixodbc' 'r-markdown' 'r-plotly'
 
 RUN R -e "install.packages('IRkernel')"
 RUN R -e "IRkernel::installspec(user = FALSE)"
@@ -91,6 +88,13 @@ RUN cargo install evcxr_jupyter \
     && evcxr_jupyter --install
 
 # Install Ruby https://www.ruby-lang.org
+ENV RUBY_VERSION=3.2.2
+ENV RUBY_HOME=/opt/ruby
+RUN git clone https://github.com/rbenv/ruby-build.git \
+    && PREFIX=/usr/local ./ruby-build/install.sh \
+    && mkdir -p ${RUBY_HOME} \
+    && ruby-build ${RUBY_VERSION} ${RUBY_HOME}/${RUBY_VERSION}
+ENV PATH=${RUBY_HOME}/${RUBY_VERSION}/bin:$PATH
 RUN gem install --no-document \
                 benchmark_driver \
                 cztop \
@@ -104,7 +108,7 @@ ENV PATH=/usr/share/dotnet:/root/.dotnet/tools:$PATH
 COPY --from=dotnet-sdk ${DOTNET_ROOT} ${DOTNET_ROOT}
 RUN ln -s ${DOTNET_ROOT}/dotnet /usr/bin/dotnet \
     && dotnet help
-RUN dotnet tool install --global Microsoft.dotnet-interactive --version 1.0.360602 \
+RUN dotnet tool install --global Microsoft.dotnet-interactive \
     && dotnet interactive jupyter install
 
 # Install Erlang and Elixir
@@ -154,12 +158,10 @@ RUN git clone https://github.com/filmor/ierl.git ierl \
 # https://github.com/allen-ball/ganymede
 ENV JAVA_HOME /usr/local/openjdk-21
 ENV PATH $JAVA_HOME/bin:$PATH
-ENV GANYMEDE_VERSION=2.0.1.20220723
+ENV GANYMEDE_VERSION=2.1.1.20221231
 COPY --from=openjdk ${JAVA_HOME} ${JAVA_HOME}
 RUN wget https://github.com/allen-ball/ganymede/releases/download/v${GANYMEDE_VERSION}/ganymede-${GANYMEDE_VERSION}.jar -O /tmp/ganymede.jar
-RUN ${JAVA_HOME}/bin/java \
-      -jar /tmp/ganymede.jar  \
-      -i --sys-prefix --id=java --display-name=Java18 --copy-jar=true
+RUN ${JAVA_HOME}/bin/java -jar /tmp/ganymede.jar -i
 ## Kotlin
 RUN mamba install --quiet --yes -c jetbrains 'kotlin-jupyter-kernel'
 ## Scala
@@ -168,8 +170,12 @@ RUN apt-get install -y curl && curl -Lo coursier https://git.io/coursier-cli \
     && ./coursier launch --fork almond -- --install \
     && rm -f coursier
 
+## Javascript
+
+
+
 #Widgets
-RUN mamba install -c conda-forge ipydrawio
+RUN mamba install -y -c conda-forge ipydrawio
 
 #language servers
 
@@ -179,6 +185,4 @@ RUN julia -e 'using Pkg; Pkg.add("LanguageServer")'
 #RUN npm install -g --save-dev bash-language-server dockerfile-language-server-node unified-language-server vscode-json-languageserver-bin yaml-language-server
 
 #Install c++
-#RUN apt-get install g++
-#RUN mamba install xeus-zmq xtl cling pugixml cpp-argparse
-#RUN mamba install xeus-cling -c conda-forge
+#C++ was installed on mamba install xeus-cling -c conda-forge
