@@ -202,3 +202,4 @@ RUN stack install --fast
 RUN stack install ihaskell --local-bin-path /bin/
 RUN ihaskell install --stack
 RUN stack install ghc
+RUN stack install ghc-tinfo6-libc6-pre232-9.2.8
