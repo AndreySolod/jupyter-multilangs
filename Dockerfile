@@ -192,14 +192,6 @@ VOLUME "/jupyterlab"
 
 ## Install Haskell
 
-RUN apt-get install -y gcc git libtinfo-dev libzmq3-dev libcairo2-dev libpango1.0-dev libmagic-dev libblas-dev liblapack-dev
-RUN mkdir -p /temp
-WORKDIR /temp
-RUN curl -sSL https://get.haskellstack.org/ | sh
-RUN git clone https://github.com/gibiansky/IHaskell
-WORKDIR /temp/IHaskell
-RUN stack install --fast
+RUN apt-get install -y ghc haskell-stack
 RUN stack install ihaskell --local-bin-path /bin/
 RUN ihaskell install --stack
-RUN stack install ghc
-RUN stack install ghc-tinfo6-libc6-pre232-9.2.8
