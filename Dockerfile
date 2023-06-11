@@ -184,7 +184,21 @@ RUN npm i -g jupyterlab-plotly
 
 ## Install javascript - uncompatible with c++ kernel
 #RUN npm install -g ijavascript && ijsinstall
+#RUN jupyter lab build
 
 RUN mkdir -p /jupyterlab
 WORKDIR "/jupyterlab"
 VOLUME "/jupyterlab"
+
+## Install Haskell
+
+RUN apt-get install -y gcc git libtinfo-dev libzmq3-dev libcairo2-dev libpango1.0-dev libmagic-dev libblas-dev liblapack-dev
+RUN mkdir -p /temp
+WORKDIR /temp
+RUN curl -sSL https://get.haskellstack.org/ | sh
+RUN git clone https://github.com/gibiansky/IHaskell
+WORKDIR /temp/IHaskell
+RUN stack install --fast
+RUN stack install ihaskell --local-bin-path /bin/
+RUN ihaskell install --stack
+RUN stack install ghc
