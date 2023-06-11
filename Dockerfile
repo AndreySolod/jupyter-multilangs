@@ -19,8 +19,8 @@ LABEL Version="0.0.1"
 RUN apt-get update && apt-get -y upgrade
 RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils curl
 RUN conda update conda --yes && conda install -c conda-forge mamba -y && mamba update -c conda-forge --all
-RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly dash lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU xeus-cling
-RUN pip install torch jupyter_dash sympy jupyterlab-dash
+RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU xeus-cling
+RUN pip install torch sympy
 RUN mkdir -p /jupyterlab && mkdir -p /jupytercfg && mkdir -p /matplotlibrc
 COPY build/jupyter_notebook_config.py /jupytercfg/jupyter_notebook_config.py
 COPY build/matplotlibrc /matplotlibrc/matplotlibrc
@@ -168,8 +168,18 @@ RUN curl -Lo coursier https://git.io/coursier-cli \
     && ./coursier launch --fork almond -- --install \
     && rm -f coursier
 
-#Widgets
-RUN mamba install -y -c conda-forge ipydrawio
+## Haskell
+
+RUN apt-get install -y ghc haskell-stack
+RUN stack install ihaskell --local-bin-path /bin/
+RUN ihaskell install --stack
+
+#Install c++
+#C++ was installed on mamba install xeus-cling -c conda-forge
+
+## Install javascript - uncompatible with c++ kernel
+#RUN npm install -g ijavascript && ijsinstall
+#RUN jupyter lab build
 
 #language servers
 
@@ -179,19 +189,12 @@ RUN julia -e 'using Pkg; Pkg.add("LanguageServer")'
 RUN npm install -g --save-dev bash-language-server
 RUN npm i -g jupyterlab-plotly
 
-#Install c++
-#C++ was installed on mamba install xeus-cling -c conda-forge
-
-## Install javascript - uncompatible with c++ kernel
-#RUN npm install -g ijavascript && ijsinstall
-#RUN jupyter lab build
+#Widgets
+RUN mamba install -y -c conda-forge ipydrawio
+RUN jupyter labextension install @krassowski/jupyterlab_go_to_definition
 
 RUN mkdir -p /jupyterlab
 WORKDIR "/jupyterlab"
 VOLUME "/jupyterlab"
 
-## Install Haskell
-
-RUN apt-get install -y ghc haskell-stack
-RUN stack install ihaskell --local-bin-path /bin/
-RUN ihaskell install --stack
+RUN mamba clean --all && apt-get autoremove && apt-get clean
