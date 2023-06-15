@@ -17,10 +17,10 @@ LABEL Description="JupyterLab for various languages. Thanks for HeRoMo"
 LABEL Version="0.0.1"
 
 RUN apt-get update && apt-get -y upgrade
-RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg nodejs npm git unixodbc unixodbc-dev r-cran-rodbc bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils curl
+RUN apt-get install -y pandoc build-essential cmake gnupg locales fonts-noto-cjk libtool libtool-bin libffi-dev libzmq3-dev libczmq-dev ffmpeg git unixodbc unixodbc-dev r-cran-rodbc bzip2 ca-certificates libffi-dev libgmp-dev libssl-dev libyaml-dev procps zlib1g-dev autoconf bison dpkg-dev gcc libbz2-dev libgdbm-compat-dev libgdbm-dev libglib2.0-dev libncurses-dev libreadline-dev libxml2-dev libxslt-dev make wget xz-utils curl
 RUN conda update conda --yes && conda install -c conda-forge mamba -y && mamba update -c conda-forge --all
 RUN mamba install -y -c conda-forge numpy scipy pandas matplotlib keras ipywidgets ipyleaflet plotly lxml xlrd xlwt jupyterlab jupyterlab-git jupyterlab-language-pack-ru-RU xeus-cling
-RUN pip install torch sympy
+RUN pip install torch sympy jupyter_dash
 RUN mkdir -p /jupyterlab && mkdir -p /jupytercfg && mkdir -p /matplotlibrc
 COPY build/jupyter_notebook_config.py /jupytercfg/jupyter_notebook_config.py
 COPY build/matplotlibrc /matplotlibrc/matplotlibrc
@@ -178,13 +178,17 @@ RUN ihaskell install --stack
 #C++ was installed on mamba install xeus-cling -c conda-forge
 
 ## Install javascript - uncompatible with c++ kernel
-#RUN npm install -g ijavascript && ijsinstall
-#RUN jupyter lab build
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && npm install npm -g
+RUN npm install -g ijavascript && ijsinstall
+RUN jupyter lab build
+
+## Install typescript
+RUN npm install -g typescript-jupyter-kernel && ts-kernel install
 
 #language servers
 
 RUN rm -rf /temp
-RUN mamba install -y -c conda-forge jedi-language-server r-languageserver
+RUN mamba install -y -c conda-forge jedi-language-server
 RUN julia -e 'using Pkg; Pkg.add("LanguageServer")'
 RUN npm install -g --save-dev bash-language-server
 RUN npm i -g jupyterlab-plotly
