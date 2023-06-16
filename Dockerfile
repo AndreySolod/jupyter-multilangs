@@ -180,12 +180,11 @@ RUN ihaskell install --stack
 ## Install javascript - uncompatible with c++ kernel
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && npm install npm -g
 RUN npm install -g ijavascript && ijsinstall
-RUN jupyter lab build
 
 ## Install typescript
 RUN npm install -g typescript-jupyter-kernel && ts-kernel install
 
-#language servers
+## language servers
 
 RUN rm -rf /temp
 RUN mamba install -y -c conda-forge jedi-language-server
@@ -193,9 +192,16 @@ RUN julia -e 'using Pkg; Pkg.add("LanguageServer")'
 RUN npm install -g --save-dev bash-language-server
 RUN npm i -g jupyterlab-plotly
 
-#Widgets
+## Widgets
 RUN mamba install -y -c conda-forge ipydrawio
 RUN jupyter labextension install @krassowski/jupyterlab_go_to_definition
+RUN jupyter lab build
+
+## new kernels for another venv
+# python-evtx
+RUN conda create -n python_evtx --yes && conda activate python_evtx && mamba install ipykernel python-evtx && python -m ipykernel install --name=python_evtx
+# impacket and scapy
+RUN conda create -n impacket --yes && conda activate impacket && mamba install ipykernel impacket scapy && python -m ipykernel install -name=python_impacket_and_scapy
 
 RUN mkdir -p /jupyterlab
 WORKDIR "/jupyterlab"
