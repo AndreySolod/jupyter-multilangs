@@ -174,10 +174,7 @@ RUN apt-get install -y ghc haskell-stack
 RUN stack install ihaskell --local-bin-path /bin/
 RUN ihaskell install --stack
 
-#Install c++
-#C++ was installed on mamba install xeus-cling -c conda-forge
-
-## Install javascript - uncompatible with c++ kernel
+## Install javascript
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && npm install npm -g
 RUN npm install -g ijavascript && ijsinstall
 
@@ -198,10 +195,10 @@ RUN jupyter labextension install @krassowski/jupyterlab_go_to_definition
 RUN jupyter lab build
 
 ## new kernels for another venv
-# python-evtx
-RUN conda create -n python_evtx --yes && conda activate python_evtx && mamba install ipykernel python-evtx && python -m ipykernel install --name=python_evtx
-# impacket and scapy
-RUN conda create -n impacket --yes && conda activate impacket && mamba install ipykernel impacket scapy && python -m ipykernel install -name=python_impacket_and_scapy
+# python_evtx and xmltodict
+RUN /bin/bash -c "mkdir /venvs && python -m venv /venvs/python_evtx && source /venvs/python_evtx/bin/activate && pip install ipykernel python-evtx xmltodict && python -m ipykernel install --name=python_evtx && deactivate"
+# Impacket
+RUN /bin/bash -c "python -m venv /venvs/impacket && source /venvs/impacket/bin/activate && pip install impacket scapy ipykernel xmltodict && python -m ipykernel install --name=impacket && deactivate"
 
 RUN mkdir -p /jupyterlab
 WORKDIR "/jupyterlab"
